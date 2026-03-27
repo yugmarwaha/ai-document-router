@@ -2,6 +2,7 @@ package com.docrouter.doc_router.controller;
 
 import com.docrouter.doc_router.service.UploadService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,7 +25,10 @@ public class UploadController {
 
     @PostMapping("/upload")
     public ResponseEntity<Map<String, String>> upload(@RequestParam("file") MultipartFile file) throws IOException {
-        Map<String, String> result = uploadService.saveFile(file);
+        // Extract the authenticated username from the security context
+        // (set by JwtAuthenticationFilter during token validation)
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Map<String, String> result = uploadService.saveFile(file, username);
         return ResponseEntity.ok(result);
     }
 }

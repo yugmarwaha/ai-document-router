@@ -48,15 +48,16 @@ public class UploadService {
      * Saves the uploaded file to the uploads/ directory, classifies its content
      * via the Anthropic API, and returns response metadata including category.
      */
-    public Map<String, String> saveFile(MultipartFile file) throws IOException {
-        // Ensure uploads/ directory exists; no-op if it already does
-        Files.createDirectories(UPLOAD_DIR);
+    public Map<String, String> saveFile(MultipartFile file, String username) throws IOException {
+        // Build per-user upload directory: uploads/{username}/
+        Path userDir = UPLOAD_DIR.resolve(username);
+        Files.createDirectories(userDir);
 
         String filename = file.getOriginalFilename();
 
         // Resolve the target path and normalize to prevent path traversal (e.g. "../../etc/passwd")
-        Path target = UPLOAD_DIR.resolve(filename).normalize();
-        if (!target.startsWith(UPLOAD_DIR)) {
+        Path target = userDir.resolve(filename).normalize();
+        if (!target.startsWith(userDir)) {
             throw new IOException("Invalid filename: " + filename);
         }
 
@@ -69,11 +70,11 @@ public class UploadService {
         // Classify the document using the Anthropic API
         String category = classifyDocument(content);
 
-        // Move the file from uploads/ into the category subfolder (e.g. uploads/invoices/)
-        Path destination = routeFile(target, category);
+        // Move the file into the per-user category subfolder (e.g. uploads/test/invoices/)
+        Path destination = routeFile(target, category, userDir);
 
-        // Log the activity to activity-log.md
-        logService.logActivity(filename, category, destination.toString());
+        // Log the activity with username to activity-log.md
+        logService.logActivity(username, filename, category, destination.toString());
 
         // LinkedHashMap preserves insertion order so JSON fields appear in a logical sequence
         Map<String, String> response = new LinkedHashMap<>();
@@ -89,12 +90,12 @@ public class UploadService {
      * Moves the file into a subfolder named after the category (pluralized).
      * e.g. uploads/invoices/report.pdf
      */
-    private Path routeFile(Path source, String category) throws IOException {
+    private Path routeFile(Path source, String category, Path userDir) throws IOException {
         // Look up the folder name from the map; default to the category itself if missing
         String folderName = CATEGORY_FOLDERS.getOrDefault(category, category);
 
-        // Build the subfolder path under the main uploads directory
-        Path categoryDir = UPLOAD_DIR.resolve(folderName);
+        // Build the subfolder path under the user's directory (e.g. uploads/test/invoices/)
+        Path categoryDir = userDir.resolve(folderName);
 
         // Create the subfolder if it doesn't exist yet; no-op if it already does
         Files.createDirectories(categoryDir);

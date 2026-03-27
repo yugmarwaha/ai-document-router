@@ -21,12 +21,12 @@ public class LogService {
 
     /**
      * Appends one activity line to activity-log.md.
-     * Format: [2026-03-27 10:42 AM] invoice → filename.txt → uploads/invoices/filename.txt
+     * Format: [2026-03-27 10:42 AM] test | invoice → file.txt → uploads/test/invoices/file.txt
      */
-    public void logActivity(String filename, String category, String destination) throws IOException {
-        // Build the log entry with timestamp, category, filename, and destination path
+    public void logActivity(String username, String filename, String category, String destination) throws IOException {
+        // Build the log entry with timestamp, username, category, filename, and destination path
         String timestamp = LocalDateTime.now().format(FORMATTER);
-        String entry = "[%s] %s → %s → %s%n".formatted(timestamp, category, filename, destination);
+        String entry = "[%s] %s | %s → %s → %s%n".formatted(timestamp, username, category, filename, destination);
 
         // CREATE — creates the file if it doesn't exist; APPEND — adds to the end, never overwrites
         Files.writeString(LOG_FILE, entry, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
