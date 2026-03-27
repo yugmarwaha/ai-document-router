@@ -39,6 +39,7 @@ Thumbs.db
 ### Env / secrets ###
 .env
 *.log
+**/application-local.properties
 
 ### Uploads ###
 uploads/
