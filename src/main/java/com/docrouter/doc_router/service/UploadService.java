@@ -33,6 +33,13 @@ public class UploadService {
     private static final String ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
     private static final String MODEL = "claude-sonnet-4-6";
 
+    private final LogService logService;
+
+    // Constructor injection for LogService
+    public UploadService(LogService logService) {
+        this.logService = logService;
+    }
+
     // Injected from application-local.properties at startup
     @Value("${anthropic.api.key}")
     private String apiKey;
@@ -64,6 +71,9 @@ public class UploadService {
 
         // Move the file from uploads/ into the category subfolder (e.g. uploads/invoices/)
         Path destination = routeFile(target, category);
+
+        // Log the activity to activity-log.md
+        logService.logActivity(filename, category, destination.toString());
 
         // LinkedHashMap preserves insertion order so JSON fields appear in a logical sequence
         Map<String, String> response = new LinkedHashMap<>();
