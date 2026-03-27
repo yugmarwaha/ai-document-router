@@ -642,7 +642,9 @@
                 badge.innerHTML = `<span class="category-badge ${data.category}">${data.category}</span>`;
 
                 document.getElementById("resDestination").textContent = data.destination;
-                document.getElementById("resTimestamp").textContent = data.timestamp;
+                // Format the ISO timestamp into a readable local string
+                const formattedTime = new Date(data.timestamp).toLocaleString();
+                document.getElementById("resTimestamp").textContent = formattedTime;
                 resultDiv.style.display = "block";
 
                 clearFile();
