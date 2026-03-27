@@ -1,0 +1,21 @@
+package com.docrouter.doc_router.model;
+
+public class User {
+
+    private String username;
+    // Stores the BCrypt hash, never the plaintext password
+    private String passwordHash;
+
+    public User(String username, String passwordHash) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+}
