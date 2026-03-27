@@ -1,6 +1,7 @@
 package com.docrouter.doc_router.controller;
 
 import com.docrouter.doc_router.model.User;
+import com.docrouter.doc_router.repository.UserRepository;
 import com.docrouter.doc_router.security.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -18,14 +18,12 @@ public class AuthController {
 
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
-    // In-memory user store — ConcurrentHashMap for thread safety since
-    // multiple requests could register simultaneously
-    private final Map<String, User> users = new ConcurrentHashMap<>();
-
-    public AuthController(JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
+    public AuthController(JwtUtil jwtUtil, PasswordEncoder passwordEncoder, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/register")
@@ -39,15 +37,15 @@ public class AuthController {
                     "error", "Username and password are required"));
         }
 
-        // Check if the username is already taken
-        if (users.containsKey(username)) {
+        // Check if the username is already taken in the database
+        if (userRepository.existsByUsername(username)) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "Username already taken"));
         }
 
         // Hash the password with BCrypt before storing — never store plaintext
         String hash = passwordEncoder.encode(password);
-        users.put(username, new User(username, hash));
+        userRepository.save(new User(username, hash));
 
         // Generate a JWT so the user is immediately logged in after registration
         String token = jwtUtil.generateToken(username);
@@ -62,8 +60,8 @@ public class AuthController {
         String username = body.get("username");
         String password = body.get("password");
 
-        // Look up the user in the in-memory store
-        User user = users.get(username);
+        // Look up the user in the database; orElse(null) keeps the logic simple
+        User user = userRepository.findByUsername(username).orElse(null);
 
         // If user doesn't exist or password doesn't match the stored hash, reject
         if (user == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
