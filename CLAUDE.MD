@@ -1,22 +1,29 @@
 # AI Document Router
 
 ## What this is
-Java Spring Boot web app. Users upload documents → AI classifies them → files route to subfolders → activity logged to a .md file.
+Java Spring Boot web app. Users register/login → upload documents → AI classifies them → files route to per-user subfolders → activity logged.
 
 ## Stack
 - Java 25, Spring Boot 3.5.13, Maven
-- Claude API for classification (Phase 2)
-- Local filesystem storage for now
+- Spring Security + JWT (jjwt 0.12.6) for auth
+- Claude API (claude-sonnet-4-6) for classification
+- PostgreSQL for user persistence
+- Vanilla HTML/CSS/JS frontend with warm dark theme
 
 ## Key commands
 - Run: `mvn spring-boot:run`
 - Build: `mvn clean package`
 
-## Planned package structure
+## Package structure
+- `config/` — Spring Security configuration
 - `controller/` — HTTP endpoints only, no business logic
 - `service/` — all business logic lives here
-- `model/` — data classes
+- `model/` — JPA entities
+- `repository/` — Spring Data JPA interfaces
+- `security/` — JWT utilities and filters
 
-## Current state
-Phase 1 complete: app boots on port 8080.
-Next: POST /upload endpoint that accepts a file and returns filename + timestamp.
+## Secrets
+All secrets live in `application-local.properties` (gitignored). Never commit API keys, JWT secrets, or DB credentials.
+
+## Portfolio / Resume
+For interview prep, talking points, and detailed technical explanations of every component, see [PORTFOLIO.md](PORTFOLIO.md).
