@@ -21,6 +21,15 @@ import java.util.Map;
 public class UploadService {
 
     private static final Path UPLOAD_DIR = Paths.get("uploads");
+
+    // Explicit category-to-folder mapping — add new entries here when categories expand
+    private static final Map<String, String> CATEGORY_FOLDERS = Map.of(
+            "invoice", "invoices",
+            "contract", "contracts",
+            "receipt", "receipts",
+            "report", "reports",
+            "unknown", "unknown"
+    );
     private static final String ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
     private static final String MODEL = "claude-sonnet-4-6";
 
@@ -53,13 +62,40 @@ public class UploadService {
         // Classify the document using the Anthropic API
         String category = classifyDocument(content);
 
+        // Move the file from uploads/ into the category subfolder (e.g. uploads/invoices/)
+        Path destination = routeFile(target, category);
+
         // LinkedHashMap preserves insertion order so JSON fields appear in a logical sequence
         Map<String, String> response = new LinkedHashMap<>();
         response.put("filename", filename);
         response.put("category", category);
+        response.put("destination", destination.toString());
         response.put("timestamp", Instant.now().toString());
-        response.put("message", "File uploaded and classified successfully");
+        response.put("message", "File uploaded, classified, and routed successfully");
         return response;
+    }
+
+    /**
+     * Moves the file into a subfolder named after the category (pluralized).
+     * e.g. uploads/invoices/report.pdf
+     */
+    private Path routeFile(Path source, String category) throws IOException {
+        // Look up the folder name from the map; default to the category itself if missing
+        String folderName = CATEGORY_FOLDERS.getOrDefault(category, category);
+
+        // Build the subfolder path under the main uploads directory
+        Path categoryDir = UPLOAD_DIR.resolve(folderName);
+
+        // Create the subfolder if it doesn't exist yet; no-op if it already does
+        Files.createDirectories(categoryDir);
+
+        // Destination is the category subfolder with the same filename
+        Path destination = categoryDir.resolve(source.getFileName());
+
+        // Move the file; REPLACE_EXISTING handles re-uploads of the same filename
+        Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
+
+        return destination;
     }
 
     /**
